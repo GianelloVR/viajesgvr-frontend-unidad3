@@ -95,46 +95,6 @@ const fillValidCardData = async (page: Page): Promise<void> => {
   await page.getByLabel(/^CVV$/i).fill("123");
 };
 
-test.describe("Épica 4 - Proceso de reserva en línea", () => {
-  test("permite crear una reserva válida con cupos disponibles", async ({ page }) => {
-    // Given: el cliente está autenticado y existe un paquete con cupos disponibles
-    // When: completa el formulario de reserva con datos válidos y confirma
-    await confirmReservationAndGoToPayment(page, 2);
-
-    // Then: se muestra el resumen final de la reserva y el total a pagar
-    await expect(page.getByText(/Resumen final de la reserva/i)).toBeVisible();
-    await expect(page.getByText(/Total a pagar/i)).toBeVisible();
-  });
-
-  test("no permite confirmar una reserva sin fecha de inicio del tour", async ({ page }) => {
-    // Given: el cliente está autenticado y se encuentra en el formulario de reserva
-    await openReservationForm(page);
-
-    // When: ingresa cantidad de pasajeros, pero no selecciona fecha de inicio
-    await page.getByLabel(/Cantidad de pasajeros/i).fill("2");
-
-    const message = await clickAndAcceptDialog(page, async () => {
-      await page.getByRole("button", { name: /Confirmar reserva/i }).click();
-    });
-
-    // Then: el sistema impide crear la reserva e informa que la fecha es obligatoria
-    expect(message).toContain("Debes seleccionar la fecha de inicio del tour");
-  });
-
-  test("muestra el resumen estimado y los descuentos antes de confirmar", async ({ page }) => {
-    // Given: el cliente está autenticado y se encuentra en el formulario de reserva
-    await openReservationForm(page);
-
-    // When: ingresa datos válidos para la reserva
-    await fillReservationForm(page, 4);
-
-    // Then: el sistema muestra el resumen estimado, descuentos y total antes de confirmar
-    await expect(page.getByText(/Resumen estimado de la reserva/i)).toBeVisible();
-    await expect(page.getByText(/Descuentos aplicados/i)).toBeVisible();
-    await expect(page.getByText(/Total a pagar/i)).toBeVisible();
-  });
-});
-
 test.describe("Épica 5 - Gestión de pagos en línea", () => {
   test("permite pagar una reserva con tarjeta simulada válida", async ({ page }) => {
     // Given: el cliente tiene una reserva creada y está en el formulario de pago

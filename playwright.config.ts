@@ -21,6 +21,7 @@ export default defineConfig({
     },
     {
       name: "chromium",
+      testMatch: [/.*\.spec\.ts/, /.*epica[0-9].*\.ts/],
       use: {
         ...devices["Desktop Chrome"],
         storageState: "tests/.auth/client.json",
