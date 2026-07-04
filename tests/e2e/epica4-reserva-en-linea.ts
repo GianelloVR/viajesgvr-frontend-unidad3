@@ -57,8 +57,6 @@ const fillReservationForm = async (
   page: Page,
   passengerCount = 2
 ): Promise<void> => {
-  // Given: el formulario de reserva está disponible
-  // When: el usuario ingresa una fecha válida, cantidad de pasajeros y solicitudes especiales
   await page.locator('input[type="date"]').first().fill(getFutureDate(20));
   await page.getByLabel(/Cantidad de pasajeros/i).fill(String(passengerCount));
   await page
@@ -66,36 +64,30 @@ const fillReservationForm = async (
     .fill("Prueba automatizada Playwright");
 };
 
-const confirmReservationAndGoToPayment = async (
-  page: Page,
-  passengerCount = 2
-): Promise<void> => {
-  await openReservationForm(page);
-  await fillReservationForm(page, passengerCount);
-
-  // When: el usuario confirma la reserva
-  const message = await clickAndAcceptDialog(page, async () => {
-    await page.getByRole("button", { name: /Confirmar reserva/i }).click();
-  });
-
-  // Then: el sistema confirma la creación de la reserva
-  expect(message).toContain("Reserva creada correctamente");
-
-  // And: el sistema redirige al formulario de pago
-  await expect(
-    page.getByRole("heading", { name: /Datos del pago/i })
-  ).toBeVisible();
-};
-
 test.describe("Épica 4 - Proceso de reserva en línea", () => {
   test("permite crear una reserva válida con cupos disponibles", async ({ page }) => {
-    // Given: el cliente está autenticado y existe un paquete con cupos disponibles
-    // When: completa el formulario de reserva con datos válidos y confirma
-    await confirmReservationAndGoToPayment(page, 2);
+    // Given: el cliente está autenticado y se encuentra en el formulario de reserva de un paquete con cupos disponibles
+    await openReservationForm(page);
 
-    // Then: se muestra el resumen final de la reserva y el total a pagar
+    // When: completa el formulario de reserva con datos válidos
+    await fillReservationForm(page, 2);
+
+    // And: confirma la reserva
+    const message = await clickAndAcceptDialog(page, async () => {
+      await page.getByRole("button", { name: /Confirmar reserva/i }).click();
+    });
+
+    // Then: el sistema confirma la creación de la reserva
+    expect(message).toContain("Reserva creada correctamente");
+
+    // And: se muestra el resumen final de la reserva y el total a pagar
     await expect(page.getByText(/Resumen final de la reserva/i)).toBeVisible();
     await expect(page.getByText(/Total a pagar/i)).toBeVisible();
+
+    // And: el sistema permite continuar al formulario de pago
+    await expect(
+      page.getByRole("heading", { name: /Datos del pago/i })
+    ).toBeVisible();
   });
 
   test("no permite confirmar una reserva sin fecha de inicio del tour", async ({ page }) => {
@@ -105,6 +97,7 @@ test.describe("Épica 4 - Proceso de reserva en línea", () => {
     // When: ingresa cantidad de pasajeros, pero no selecciona fecha de inicio
     await page.getByLabel(/Cantidad de pasajeros/i).fill("2");
 
+    // And: intenta confirmar la reserva
     const message = await clickAndAcceptDialog(page, async () => {
       await page.getByRole("button", { name: /Confirmar reserva/i }).click();
     });
